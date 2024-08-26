@@ -1,0 +1,62 @@
+name: Build
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+    branches:
+        - '**'
+
+permissions: write-all
+
+jobs:
+  build:
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: true
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@main
+    - uses: actions/setup-python@main
+      with:
+        python-version: '3.12'
+    - run: python -m pip install 'httpx[http2]' 'aiofiles'
+    - name: Run
+      env: 
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GL_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+        MIRRORING_TOKEN: ${{ secrets.MIRRORING_PAT }}
+      run: |
+        git config --global http.postBuffer 524288000
+        
+        source './utils.sh'
+        
+        while read line; do
+            declare source="$(awk -F  ' -> ' '{print $1}' <<< "${line}")"
+            declare destination="$(awk -F  ' -> ' '{print $2}' <<< "${line}")"
+            
+            mirror \
+                "${source}" \
+                "${destination}" \
+                "${MIRRORING_TOKEN}"
+        done < './mirroring-third-party.txt'
+        
+        echo '${{ secrets.FORGEJO_INSTANCES }}' > './forgejo.json'
+        
+        # gpg --batch --yes --passphrase '${{ secrets.PASS }}' --symmetric --cipher-algo 'AES256' --armor -o - < './forgejo.json'
+        
+        python -B -u main.py
+    - name: Run
+      run: |
+        git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git config --global user.name "github-actions[bot]"
+        
+        git branch timestamp
+        git checkout timestamp
+        
+        date > timestamp
+        git add timestamp
+        git commit -m "Initial commit"
+        
+        git push -f origin timestamp
+
