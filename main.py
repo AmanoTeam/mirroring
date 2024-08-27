@@ -8,7 +8,8 @@ organization = "AmanoTeam"
 
 class Repository:
 	
-	def __init__(self, name, description):
+	def __init__(self, id, name, description):
+		self.id = id
 		self.name = name
 		self.description = description
 	
@@ -35,6 +36,32 @@ async def gitlab_create_repository(client, name, description = None):
 		}
 	)
 	data = response.json()
+	
+	return response.status_code == 200
+
+async def gitlab_unprotect_branches(client, repository):
+	
+	gitlab_token = os.getenv(key = "GL_TOKEN")
+	
+	response = await client.get(
+		url = "https://gitlab.com/api/v4/projects/%i/protected_branches" % (repository),
+		headers = {
+			"Authorization": "Bearer %s" % gitlab_token
+		}
+	)
+	data = response.json()
+	
+	for branch in data:
+		name = branch["name"]
+		
+		print("- Deleting branch protections for branch '%s'" % (name))
+		
+		response = await client.delete(
+			url = "https://gitlab.com/api/v4/projects/%i/protected_branches/%s" % (repository, name),
+			headers = {
+				"Authorization": "Bearer %s" % gitlab_token
+			}
+		)
 	
 	return response.status_code == 200
 
@@ -74,6 +101,7 @@ async def mirror(client):
 		)
 		
 		repo = Repository(
+			id = None,
 			name = name,
 			description = description
 		)
@@ -93,13 +121,20 @@ async def mirror(client):
 	data = response.json()
 	
 	for repository in data:
-		(name) = (
+		(id, name) = (
+			repository["id"],
 			repository["name"]
 		)
 		
 		repo = Repository(
+			id = id,
 			name = name,
 			description = None
+		)
+		
+		await gitlab_unprotect_branches(
+			client = client,
+			repository = repo.id
 		)
 		
 		gitlab_repositories.append(repo)
@@ -153,6 +188,7 @@ async def mirror(client):
 					"git",
 					"-C", directory,
 					"push",
+					"--force",
 					"--quiet",
 					"--mirror",
 					url
@@ -163,7 +199,7 @@ async def mirror(client):
 
 async def main():
 	
-	async with httpx.AsyncClient(http2 = True) as client:
+	async with httpx.AsyncClient(http2 = True, verify = False) as client:
 		await mirror(client = client)
 
 asyncio.run(main())
