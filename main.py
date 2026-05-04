@@ -92,8 +92,8 @@ async def forgejo_create_repository(
 			"Authorization": "token %s" % password
 		}
 	)
+	print(response.text)
 	data = response.json()
-	print(data)
 	
 	status = response.status_code in (200, 201, 409, 500)
 	
