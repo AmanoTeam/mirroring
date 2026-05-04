@@ -46,7 +46,7 @@ jobs:
         # gpg --batch --yes --passphrase '${{ secrets.PASS }}' --symmetric --cipher-algo 'AES256' --armor -o - < './forgejo.json'
         
         python -B -u main.py
-    - name: Run
+    - name: Update timestamp
       run: |
         git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
         git config --global user.name "github-actions[bot]"
@@ -56,7 +56,7 @@ jobs:
         
         date > timestamp
         git add timestamp
-        git commit -m "Initial commit"
+        git commit -m "Update timestamp"
         
         git push -f origin timestamp
 

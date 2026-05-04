@@ -93,6 +93,7 @@ async def forgejo_create_repository(
 		}
 	)
 	data = response.json()
+	print(data)
 	
 	status = response.status_code in (200, 201, 409, 500)
 	
