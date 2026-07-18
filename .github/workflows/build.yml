@@ -27,7 +27,7 @@ jobs:
         GL_TOKEN: ${{ secrets.GITLAB_TOKEN }}
         MIRRORING_TOKEN: ${{ secrets.MIRRORING_PAT }}
       run: |
-        git config --global http.postBuffer 524288000
+        git config --global http.postBuffer $((1024 * 1024 * 1024))
         
         source './utils.sh'
         
