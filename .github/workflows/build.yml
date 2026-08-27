@@ -35,10 +35,10 @@ jobs:
             declare source="$(awk -F  ' -> ' '{print $1}' <<< "${line}")"
             declare destination="$(awk -F  ' -> ' '{print $2}' <<< "${line}")"
             
-            mirror \
-                "${source}" \
-                "${destination}" \
-                "${MIRRORING_TOKEN}"
+            while true; do
+                mirror "${source}" "${destination}" "${MIRRORING_TOKEN}" || continue
+                break
+            done
         done < './mirroring-third-party.txt'
         
         echo '${{ secrets.FORGEJO_INSTANCES }}' > './forgejo.json'
