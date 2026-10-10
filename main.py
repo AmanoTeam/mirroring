@@ -59,7 +59,8 @@ async def gitlab_create_repository(client, name, description = None):
 	response = await client.put(
 		url = "https://gitlab.com/api/v4/projects/AmanoTeam%%2F%s" % (name),
 		json = {
-			"default_branch": "master"
+			"default_branch": "master",
+			"description": "" if description is None else description
 		},
 		headers = {
 			"Authorization": "Bearer %s" % gitlab_token
@@ -99,6 +100,17 @@ async def forgejo_create_repository(
 	
 	if not status:
 		print("error: %s" % str(data))
+		return status
+	
+	response = await client.patch(
+		url = "https://%s/api/v1/repos/AmanoTeam/%s" % (user, name),
+		json = {
+			"description": "" if description is None else description
+		},
+		headers = {
+			"Authorization": "token %s" % password
+		}
+	)
 	
 	return status
 
