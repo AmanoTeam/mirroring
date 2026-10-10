@@ -125,19 +125,28 @@ async def forgejo_purge_orphaned(
 		instance["password"]
 	)
 	
-	response = await client.get(
-		url = "https://%s/api/v1/user/repos" % (user),
-		headers = {
-			"Authorization": "token %s" % password
-		},
-		params = {
-			"limit": 100
-		}
-	)
-	data = response.json()
-	print(data, user)
+	forgejo_repositories = set()
+	
+	for page_number in range(1, 16):
+		response = await client.get(
+			url = "https://%s/api/v1/user/repos" % (user),
+			headers = {
+				"Authorization": "token %s" % password
+			},
+			params = {
+				"limit": 50,
+				"page": page_number
+			}
+		)
+		data = response.json()
+		
+		if not data:
+			break
+		
+		forgejo_repositories.update(item["name"] for item in data)
+	
+	print(forgejo_repositories, user)
 	github_repositories = set(repository.name for repository in repositories)
-	forgejo_repositories = set(item["name"] for item in data)
 	
 	for repository in forgejo_repositories:
 		if repository in github_repositories:
@@ -151,6 +160,9 @@ async def forgejo_purge_orphaned(
 				"Authorization": "token %s" % password
 			}
 		)
+		
+		if response.status_code not in (200, 204, 404):
+			print("error: %s" % str(response.json()))
 
 async def gitlab_unprotect_branches(client, repository):
 	
