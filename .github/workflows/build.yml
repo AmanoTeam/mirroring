@@ -26,10 +26,15 @@ jobs:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         GL_TOKEN: ${{ secrets.GITLAB_TOKEN }}
         MIRRORING_TOKEN: ${{ secrets.MIRRORING_PAT }}
+        HTTPS_PROXY: 'http://127.0.0.1:8080'
       run: |
         git config --global http.postBuffer $((1024 * 1024 * 1024))
         
         source './utils.sh'
+        
+        sudo apt install v2ray
+        echo '${{ secrets.V2RAY_CONFIG }}' > 'config.json'
+        v2ray run &
         
         while read line; do
             declare source="$(awk -F  ' -> ' '{print $1}' <<< "${line}")"

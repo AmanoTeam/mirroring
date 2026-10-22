@@ -174,6 +174,10 @@ async def gitlab_unprotect_branches(client, repository):
 			"Authorization": "Bearer %s" % gitlab_token
 		}
 	)
+	
+	if response.status_code != 200:
+		print(response.text)
+	
 	data = response.json()
 	
 	for branch in data:
